@@ -1,0 +1,37 @@
+#main {
+  position: relative;
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+  user-select: none;          /* Likely future */
+}
+
+#overlay {
+  position: absolute;
+  top: 0px; left: 0px;
+}
+
+.zone_overlay {
+  stroke: rgba(0,255,255,0.6);
+  fill: rgba(0,255,255,0.2);
+  cursor: move;
+}
+.zone_overlay:hover {
+  stroke: rgba(0,255,255,1);
+}
+
+.zone_name {
+  fill: rgba(0,255,255,0.6);
+  cursor: pointer;
+}
+.zone_name:hover {
+  fill: rgba(0,255,255,1);
+}
+
+.zone_resize {
+  fill: transparent;
+  cursor: nwse-resize;
+}
+.zone_resize:hover {
+  fill: rgba(0,255,255,1);
+}
