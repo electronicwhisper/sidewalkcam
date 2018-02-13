@@ -7,6 +7,10 @@ var image_height = 720;
 
 var settings = false;
 var raw_readings = {};
+var raw_readings_history = {};
+
+var selected_zone_name = false;
+
 
 
 // ----------------------------------------------------------------------------
@@ -38,6 +42,13 @@ function load_raw_readings() {
   .then(function (response) { return response.json(); })
   .then(function (data) {
     raw_readings = data;
+    for (name in raw_readings) {
+      raw_readings_history[name] = raw_readings_history[name] || [];
+      raw_readings_history[name].push(raw_readings[name]);
+      if (raw_readings_history[name].length > 200) {
+        raw_readings_history[name].shift();
+      }
+    }
     render();
     setTimeout(load_raw_readings, 50);
   });
@@ -48,8 +59,12 @@ load_raw_readings();
 // Rendering
 // ----------------------------------------------------------------------------
 
-function now_seconds() {
-  return Math.floor(Date.now()/1000);
+function now_image_refresh() {
+  return Math.floor(Date.now()/500);
+}
+
+function lerp(dmin, dmax, rmin, rmax, value) {
+  return ((value - dmin) / (dmax - dmin)) * (rmax - rmin) + rmin;
 }
 
 function render() {
@@ -66,23 +81,45 @@ function render() {
     `;
   }
 
+  var graph_html = "";
+  if (selected_zone_name) {
+    var history = raw_readings_history[selected_zone_name];
+    if (history.length > 0) {
+      var zero = settings.zones[selected_zone_name].zero;
+      var max_value = zero;
+      for (var i = 0; i < history.length; i++) {
+        max_value = Math.max(max_value, history[i]);
+      }
+      var path_d = "M-1,0 "
+      for (var i = 0; i < history.length; i++) {
+        path_d += "L" + i + "," + lerp(0, max_value, 200, 0, history[i]);
+      }
+      var zero_line = lerp(0, max_value, 200, 0, zero);
+      graph_html += `
+        <svg width="200" height="200" onclick="set_zero_point(${max_value})">
+          <path d="${path_d}" stroke="red" fill="none" />
+          <text x="200" y="0" text-anchor="end" alignment-baseline="hanging">${max_value}</text>
+          <line x1="0" y1="${zero_line}" x2="200" y2="${zero_line}" stroke="green" />
+        </svg>
+      `;
+    }
+  }
+
   var html = `
     <div id="container">
       <div id="main">
-        <img id="camera_image" src="${image_url}?${now_seconds()}">
+        <img id="camera_image" src="${image_url}?${now_image_refresh()}">
         <svg id="overlay" width="${image_width}" height="${image_height}">
           ${overlay_html}
         </svg>
       </div>
+      <div id="graph">
+        ${graph_html}
+      </div>
       <div id="settings">
         <div><button onclick="new_zone()">New Zone</button></div>
-        <div><button onclick="set_zero_point()">Set Zero Point</button></div>
         <div>
-          Trigger
-          <input type="text" value="${settings.trigger}" onchange="set_setting('trigger', this.value)">
-        </div>
-        <div>
-          Threshold
+          Color Value Threshold
           <input type="range" min="0" max="255" step="1" value="${settings.threshold_value}" oninput="set_setting('threshold_value', this.value)">
           ${settings.threshold_value}
         </div>
@@ -96,7 +133,7 @@ function render() {
   setDOM(document.querySelector("#container"), html);
 }
 
-setInterval(render, 1000);
+setInterval(render, 500);
 
 
 // ----------------------------------------------------------------------------
@@ -112,17 +149,20 @@ function rename_zone(old_name) {
     delete settings.zones[old_name];
     push_settings();
   }
+  render();
 }
 
 function new_zone() {
   var name = window.prompt("Zone name:");
   if (name) {
-    settings.zones[name] = {x: 100, y:100, width: 100, height: 100};
+    settings.zones[name] = {x: 100, y:100, width: 100, height: 100, zero: 50};
     push_settings();
   }
+  render();
 }
 
 function start_zone_drag(name) {
+  selected_zone_name = name;
   var zone = settings.zones[name];
   var offset_x = current_mouse_x - zone.x;
   var offset_y = current_mouse_y - zone.y;
@@ -133,6 +173,7 @@ function start_zone_drag(name) {
 }
 
 function start_zone_resize(name) {
+  selected_zone_name = name;
   var zone = settings.zones[name];
   var offset_x = current_mouse_x - zone.width;
   var offset_y = current_mouse_y - zone.height;
@@ -148,10 +189,11 @@ function set_setting(setting_name, value) {
   render();
 }
 
-function set_zero_point() {
-  for (name in settings.zones) {
-    settings.zones[name].zero = raw_readings[name];
-  }
+function set_zero_point(max_value) {
+  var graph_offset_y = document.querySelector("#graph svg").getBoundingClientRect().top;
+  var y = current_mouse_y - graph_offset_y;
+  var zero = lerp(200, 0, 0, max_value, y);
+  settings.zones[selected_zone_name].zero = zero;
   push_settings();
   render();
 }

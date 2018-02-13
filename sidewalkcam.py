@@ -32,6 +32,8 @@ def set_camera_settings():
     vs.camera.contrast = 0
     vs.camera.awb_mode = "off"
     vs.camera.awb_gains = (1, 1)
+    vs.drc_strength = "off"
+    vs.exposure_mode = "off"
     # Customized settings
     vs.camera.shutter_speed = settings["shutter_speed"]
 
@@ -86,7 +88,7 @@ class ReadingsHandler(web.RequestHandler):
     def get(self):
         readings = get_raw_readings()
         for name in readings:
-            readings[name] = (readings[name] < settings["zones"][name]["zero"] - settings["trigger"])
+            readings[name] = ( readings[name] < settings["zones"][name]["zero"] )
         self.write(readings)
 
 

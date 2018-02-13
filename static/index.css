@@ -11,6 +11,10 @@
   top: 0px; left: 0px;
 }
 
+#graph svg {
+  background-color: #ccc;
+}
+
 .zone_overlay {
   stroke: rgba(0,255,255,0.6);
   fill: rgba(0,255,255,0.2);
