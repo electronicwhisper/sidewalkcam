@@ -91,6 +91,9 @@ class ReadingsHandler(web.RequestHandler):
             readings[name] = ( readings[name] < settings["zones"][name]["zero"] )
         self.write(readings)
 
+class FrameCountHandler(web.RequestHandler):
+    def get(self):
+        self.write( str(vs.get_frame_count()) )
 
 app = web.Application([
     (r'/raw', RawHandler),
@@ -98,6 +101,7 @@ app = web.Application([
     (r'/settings', SettingsHandler),
     (r'/raw_readings', RawReadingsHandler),
     (r'/readings', ReadingsHandler),
+    (r'/frame_count', FrameCountHandler),
     (r'/(.*)', web.StaticFileHandler, {'path': './static', "default_filename": "index.html"}),
 ])
 

@@ -33,3 +33,7 @@ set_config_var gpu_mem 128 /boot/config.txt
 apt-get -y install build-essential python-dev python-pip python-opencv libzmq3-dev
 pip install "picamera[array]"
 pip install tornado
+
+# TODO: install nodejs
+# curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+# sudo apt install nodejs
